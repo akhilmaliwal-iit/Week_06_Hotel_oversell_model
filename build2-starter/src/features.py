@@ -49,7 +49,43 @@ bin3_features = [
     'reservation_status_date',
 ]
 
+bin1_numeric_cols = [
+    'lead_time',
+    'adults',
+    'children',
+    'babies',
+    'previous_cancellations',
+    'previous_bookings_not_canceled',
+    'adr'
+]
+
+bin1_categorical_cols = [
+    'hotel',
+    'country',
+    'market_segment',
+    'distribution_channel',
+    'is_repeated_guest',
+    'deposit_type',
+    'agent',
+    'company',
+    'customer_type'
+]
+
 run_b_features = bin1_features + bin2_features+bin3_features
+
+
+def extract_bin1_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract strictly Bin 1 features known on the day of booking."""
+    num_cols = [
+        "lead_time", "adr", "adults", "children", "stays_in_weekend_nights",
+        "stays_in_week_nights", "is_repeated_guest", "previous_cancellations",
+        "previous_bookings_not_canceled"
+    ]
+    cat_cols = [
+        "hotel", "market_segment", "distribution_channel", "deposit_type", "customer_type"
+    ]
+    encoded = pd.get_dummies(df[cat_cols], drop_first=True)
+    return pd.concat([df[num_cols], encoded], axis=1)
 
 
 def load_data():
@@ -63,6 +99,7 @@ def load_data():
         + df['arrival_date_day_of_month'].astype(str),
         format='%Y-%B-%d',
     )
+    df['total_nights']=df['stays_in_weekend_nights']+df['stays_in_week_nights']
     return df
 
 def clean_bookings(df: pd.DataFrame) -> pd.DataFrame:
@@ -147,13 +184,37 @@ def run_logistic_regression(train_df, val_df, features, run_name):
     X_train = train_df[features]
     y_train = train_df['is_canceled']
 
-    categorical_cols = X_train.select_dtypes(
-    include=['object', 'category', 'str']).columns.tolist()
-    for col in ['agent', 'company']:
-        if col in features and col not in categorical_cols:
-            categorical_cols.append(col)
+# Explicit classification for Bin 1
+    categorical_cols = [
+    col for col in features
+    if col in bin1_categorical_cols
+]
 
-    numerical_cols = [col for col in features if col not in categorical_cols]
+    numerical_cols = [
+    col for col in features
+    if col in bin1_numeric_cols
+]
+
+# Automatic classification for additional Bin 2 / Bin 3 features
+    for col in features:
+
+        if col not in categorical_cols and col not in numerical_cols:
+
+            if (
+            pd.api.types.is_object_dtype(X_train[col])
+            or isinstance(X_train[col].dtype, pd.CategoricalDtype)
+            or pd.api.types.is_string_dtype(X_train[col])
+        ):
+                categorical_cols.append(col)
+            else:
+                numerical_cols.append(col)
+
+# Validation checks
+    assert set(numerical_cols + categorical_cols) == set(features)
+    assert not set(numerical_cols).intersection(categorical_cols)
+
+    # print("Numerical columns to scale:", numerical_cols)
+    # print("Categorical columns to encode:", categorical_cols)
 
     numerical_pipeline = Pipeline([
         ('imputer', SimpleImputer(strategy='median')),
@@ -161,9 +222,13 @@ def run_logistic_regression(train_df, val_df, features, run_name):
     ])
 
     categorical_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('encoder', OneHotEncoder(handle_unknown='ignore')),
-    ])
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('encoder', OneHotEncoder(
+        drop='first',
+        handle_unknown='infrequent_if_exist',
+        min_frequency=10
+    )),
+])
 
     preprocessor = ColumnTransformer([
         ('num', numerical_pipeline, numerical_cols),
@@ -182,8 +247,9 @@ def run_logistic_regression(train_df, val_df, features, run_name):
 
 if __name__ == '__main__':
     df = load_data()
-    print(df.shape)
+    # print(df.shape)
     data = clean_bookings(df)
+    # print(data.isna().sum())
     print(data.shape)
     train_df = data[data['arrival_date'] < '2016-07-01']
     choose_df = data[(data['arrival_date'] >= '2016-07-01') & (data['arrival_date'] < '2017-01-01')]
@@ -219,3 +285,16 @@ if __name__ == '__main__':
         bin1_features,
         'Random Time Split - Test',
     )
+
+    deposit_audit = (
+        data.groupby('deposit_type')['is_canceled']
+        .agg(
+            total_bookings='count',
+            cancellations='sum',
+            cancellation_rate='mean'
+        )
+    )
+
+    deposit_audit['cancellation_rate'] *= 100
+
+    print(deposit_audit)
