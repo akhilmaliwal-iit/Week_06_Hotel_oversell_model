@@ -8,7 +8,7 @@ Answer each question in one to three sentences. The worked example comes from a 
 
 > **Worked example.** The client is the home-collection unit of a diagnostics chain. Patients pay per test (B2C); partner hospitals and corporate health camps pay on monthly invoices (B2B). We are the analytics vendor, and the unit head renews us only if idle phlebotomist slots fall.
 
-**Our answer:**
+**Our answer:**The client is a two-hotel group in Portugal (a Lisbon city hotel and an Algarve resort). Guests pay per stay (B2C), and tour operators, travel agents and groups pay in volume (B2B). RateGain is the vendor, paid by the hotel, so the work has to pay for itself in the hotel's euros.
 
 <!-- answer:3 -->
 
@@ -16,7 +16,7 @@ Answer each question in one to three sentences. The worked example comes from a 
 
 > **Worked example.** The city operations lead fixes each route's bookings every evening for the next morning. An empty slot costs about Rs 450 of phlebotomist time and fuel. A patient we cannot reach in time costs about Rs 600 in a voucher and a rebooking, plus a complaint.
 
-**Our answer:**
+**Our answer:**The revenue manager decides each night. An empty room costs that night's average booked stay (adr × nights), about EUR 319 at the City Hotel and EUR 435 at the Resort. A walked guest costs EUR 300.
 
 <!-- answer:3 -->
 
@@ -24,7 +24,7 @@ Answer each question in one to three sentences. The worked example comes from a 
 
 > **Worked example.** How many extra visits to book on each route for tomorrow morning, from the bookings known at the end of today, about how many booked patients will not be there when the phlebotomist arrives.
 
-**Our answer:**
+**Our answer:**How many rooms beyond capacity to keep selling for each arrival night, using only what the hotel knew at booking, about how many of that night's bookings will cancel.
 
 <!-- answer:3 -->
 
@@ -32,7 +32,7 @@ Answer each question in one to three sentences. The worked example comes from a 
 
 > **Worked example.** The route-morning: one phlebotomist, one morning, about 12 slots. The overbooking is set per route, so per-patient answers are only useful once they are added up per route.
 
-**Our answer:**
+**Our answer:**One hotel on one arrival night. Overselling is set per night, so per-booking probabilities only matter once they are summed per night.
 
 <!-- answer:2 -->
 
@@ -43,6 +43,10 @@ _Give each one a numerator, a denominator, a window and the exclusions. Draw the
 > **Worked example.** North star: idle slots per route-morning, averaged over a calendar month, excluding routes the lab cancelled. Guardrail: patients turned away per 1,000 completed visits, per calendar month, all routes, at most 5.
 
 **Our answer:**
+North star: empty rooms per night, averaged over a calendar month, per hotel. The numerator is rooms left empty by cancellations, the denominator is nights, and bookings with no usable adr are excluded.
+Guardrail: walked guests per 1,000 arrivals over the period, at most 10. Arrivals are non-cancelled bookings, and the ceiling is checked on the choose period.
+Metric tree: the north star at the top, empty rooms × stay value and walks × EUR 300 as the two costs below it, and the ceiling beside it.
+
 
 <!-- answer:4 -->
 
@@ -65,22 +69,21 @@ _Every number in the brief gets a row. A number you could not check gets a quest
 > **Worked example.** Pricing of home visits, phlebotomist hiring, and routes outside the three metro cities.
 
 **Our answer:**
-
+Room pricing, marketing guest segments (the wish list), channel strategy, hotels other than these two, and any column not known at booking.
 <!-- answer:2 -->
 
 ### 8. Who owns what on this team?
 
 | Role | Name | Owns |
 |---|---|---|
-| Client Lead | | |
-| Data Lead | | |
-| Model Lead | | |
-| Build Lead | | |
+| Client Lead | Harshit Agrawal | |
+| Data Lead | Malav Modi | |
+| Model Lead | Chetan | |
+| Build Lead | Akhil | |
 
 ### 9. What is the one question we are sending the client?
 
 > **Worked example.** "Is a no-show recorded by the phlebotomist at the door, or by the call centre the next day?"
 
 **Our answer:**
-
-<!-- answer:2 -->
+Is a no-show recorded as cancelled by the desk at check-in time, or later?" This matters because is_canceled includes no-shows.
