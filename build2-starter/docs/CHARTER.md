@@ -62,7 +62,11 @@ _Every number in the brief gets a row. A number you could not check gets a quest
 
 | Number in the brief | What we checked | What the data said | What we do about it |
 |---|---|---|---|
-| | | | |
+| About 1 booking in 4 is cancelled | Share of all 119,390 bookings with is_canceled = 1, overall and per hotel. | 37.0% overall. City is 41.7%, Resort is 27.8%. Only the Resort is near one in four. | The brief is wrong for the group. Use the per-hotel rates in the charter.
+| 119,390 bookings, 32 columns | Row and column count of the raw file as loaded. | The row count matches. The raw file read in as 34 columns because I had added arrival_date and nights, so recount on the raw file before logging it. | Log the checked value.
+| Arrivals July 2015 to August 2017 | Earliest and latest arrival date, built from the year, month and day columns. | 1 Jul 2015 to 31 Aug 2017, confirmed. | None. |
+| Finance: most non-refundable bookings never become stays (the brief says this "cannot be right") | Cancellation rate by deposit_type, overall and per hotel. | Finance is right. 99.4% of Non Refund bookings cancel (99.8% at the City Hotel, 96.0% at the Resort). | This is observation 1. Don't assume prepaid means guaranteed.
+| Walk ceiling of 1 in 100 | Converted 1 in 100 to walks per 1,000 and compared it with the scoring rule's ceiling. | Equals 10 per 1,000, which is consistent with the scoring rule. | None.
 
 ### 7. What is out of scope?
 
