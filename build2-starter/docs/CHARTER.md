@@ -80,10 +80,10 @@ Room pricing, marketing guest segments (the wish list), channel strategy, hotels
 
 | Role | Name | Owns |
 |---|---|---|
-| Client Lead | Harshit Agrawal | |
-| Data Lead | Malav Modi | |
-| Model Lead | Chetan | |
-| Build Lead | Akhil | |
+| Client Lead | Harshit Agrawal `docs/CHARTER.md`, `docs/RFP.md`, business frame, metric tree, presentation slides 1-2 & 10, client defense |
+| Data Lead | Malav Modi |`docs/COLUMNS.md`, `docs/DECISIONS.md`, `src/features.py`, leakage audit, AI comparison `docs/COMPARISON.md` |
+| Model Lead | Chetan | `src/backtest.py`, 5 model comparison table, buffer tuning on Choose, `models/chosen_model.joblib`|
+| Build Lead | Akhil | `AGENTS.md`, `docs/PRD.md`, `docs/BUILD_PLAN.md`, `docs/ROADMAP.md`, `src/nightly.py`, automated tests|
 
 ### 9. What is the one question we are sending the client?
 
