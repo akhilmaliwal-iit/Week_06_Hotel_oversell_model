@@ -34,13 +34,14 @@ Each booking receives a predicted cancellation probability $p_i$ from the traine
 
 ### 7. What is the error bill on the proof period?
 
-| Rule                          | Empty rooms | Walked guests | Walks per 1,000 | Cost (EUR)       | Saving against flat rule (EUR) |
-| ----------------------------- | ----------- | ------------- | --------------- | ---------------- | ------------------------------ |
-| Zero Oversell (k=0)           | 15,734      | 0             | 0.00            | EUR 6,717,251.34 | -EUR 2,783,008.68              |
-| Client Flat Rule              | 8,179       | 151           | 6.07            | EUR 3,934,242.66 | Baseline (EUR 0.00)            |
-| Lookup Table                  | 10,647      | 122           | 4.90            | EUR 4,867,947.74 | -EUR 933,705.08                |
-| Logistic Regression           | 5,320       | 84            | 3.38            | EUR 2,488,555.19 | +EUR 1,445,687.47              |
-| HistGradientBoosting (Winner) | 4,419       | 68            | 2.73            | EUR 2,175,452.65 | **+EUR 1,758,790.01**          |
+| Rule                 | Empty rooms | Walked guests | Walks per 1,000 | Cost (EUR)       | Saving against flat rule (EUR) |
+| -------------------- | ----------- | ------------- | --------------- | ---------------- | ------------------------------ |
+| Zero Oversell (k=0)  | 15,734      | 0             | 0.00            | EUR 6,717,251.34 | -EUR 2,783,008.68              |
+| Client Flat Rule     | 8,179       | 151           | 6.07            | EUR 3,934,242.66 | Baseline (EUR 0.00)            |
+| Lookup Table         | 10,602      | 148           | 5.95            | EUR 4,861,180.37 | -EUR 926,937.71                |
+| Logistic Regression  | 4,623       | 83            | 3.34            | EUR 2,211,898.14 | +EUR 1,722,344.52              |
+| HistGradientBoosting | 4,202       | 111           | 4.46            | EUR 2,220,889.74 | +EUR 1,713,352.92              |
+| LightGBM             | 3,852       | 145           | 5.83            | EUR 2,030,844.54 | **+EUR 1,903,398.12**          |
 
 ### 8. What does the system look like, first as a black box and then inside?
 

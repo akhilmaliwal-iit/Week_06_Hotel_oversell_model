@@ -19,6 +19,7 @@ Run from the project root:  python src/final_backtest.py
 """
 from pathlib import Path
 
+import pathlib
 import joblib
 import numpy as np
 import pandas as pd
@@ -37,11 +38,13 @@ import features
 # Settings
 # ----------------------------------------------------------------------------
 TARGET = "is_canceled"
-CANDIDATE_BUFFERS = range(0, 31)   # must reach 16 for the Flat Rule (range(0, 10) returns None)
+# must reach 16 for the Flat Rule (range(0, 10) returns None)
+CANDIDATE_BUFFERS = range(0, 31)
 TOP_N = 10                         # keep top-N values for high-cardinality columns
 CEILING = contract.WALK_CEILING
-EVIDENCE_DIR = Path("evidence")
-MODEL_PATH = Path("models/chosen_model.joblib")
+EVIDENCE_DIR = pathlib.Path(__file__).resolve().parent.parent / "evidence"
+MODEL_PATH = pathlib.Path(__file__).resolve(
+).parent.parent / "models"/"chosen_model.joblib"
 
 MODEL_FEATURES = features.bin1_features
 CAT_COLS = features.bin1_categorical_cols
@@ -79,7 +82,8 @@ def sweep_buffers(choose_nights):
     rows = []
     for b in CANDIDATE_BUFFERS:
         s = score(choose_nights, k_from_buffer(choose_nights, b))
-        rows.append({"buffer": b, "cost": s["cost"], "walk_rate": s["walk_rate"], "ok": s["ok"]})
+        rows.append(
+            {"buffer": b, "cost": s["cost"], "walk_rate": s["walk_rate"], "ok": s["ok"]})
     return pd.DataFrame(rows)
 
 
@@ -87,7 +91,8 @@ def best_buffer(sweep):
     """Cheapest buffer that meets the ceiling. Proof is never touched here."""
     ok = sweep[sweep["ok"]]
     if ok.empty:
-        raise RuntimeError("No buffer met the walk ceiling - widen CANDIDATE_BUFFERS")
+        raise RuntimeError(
+            "No buffer met the walk ceiling - widen CANDIDATE_BUFFERS")
     return int(ok.loc[ok["cost"].idxmin(), "buffer"])
 
 
@@ -120,24 +125,28 @@ def make_X(df, top_cats, columns=None):
 # Probability methods -> (p_choose, p_proof) per booking
 # ----------------------------------------------------------------------------
 def flat_probs(train, choose, proof):
-    rate = train.groupby("hotel")[TARGET].mean()           # City ~0.417, Resort ~0.278
+    # City ~0.417, Resort ~0.278
+    rate = train.groupby("hotel")[TARGET].mean()
     return choose["hotel"].map(rate).values, proof["hotel"].map(rate).values
 
 
 def lookup_probs(train, choose, proof):
-    bins = [-1, 7, 30, 100, 10_000]                        # fixed bins: no NaN on unseen lead times
+    # fixed bins: no NaN on unseen lead times
+    bins = [-1, 7, 30, 100, 10_000]
     labels = ["short", "mid", "long", "very_long"]
     keys = ["hotel", "market_segment", "lead_band"]
 
     def band(df):
         d = df[["hotel", "market_segment", "lead_time"]].copy()
-        d["lead_band"] = pd.cut(d["lead_time"], bins=bins, labels=labels).astype(str)
+        d["lead_band"] = pd.cut(d["lead_time"], bins=bins,
+                                labels=labels).astype(str)
         return d
 
     tr = band(train)
     tr[TARGET] = train[TARGET].values
     table = tr.groupby(keys)[TARGET].mean()
-    hotel_rate = train.groupby("hotel")[TARGET].mean()     # fallback for unseen combinations
+    # fallback for unseen combinations
+    hotel_rate = train.groupby("hotel")[TARGET].mean()
 
     def lookup(df):
         d = band(df)
@@ -149,7 +158,8 @@ def lookup_probs(train, choose, proof):
 
 def model_probs(model, X_train, y_train, X_choose, X_proof):
     model.fit(X_train, y_train)
-    return model.predict_proba(X_choose)[:, 1], model.predict_proba(X_proof)[:, 1]   # not predict()
+    # not predict()
+    return model.predict_proba(X_choose)[:, 1], model.predict_proba(X_proof)[:, 1]
 
 
 def early_stopping_model_probs(model, X_train, y_train, X_choose, y_choose, X_proof):
@@ -177,13 +187,16 @@ def save_buffer_curve(sweep, chosen_b, title):
         return
     EVIDENCE_DIR.mkdir(exist_ok=True)
     fig, ax1 = plt.subplots(figsize=(8, 4.5))
-    ax1.plot(sweep["buffer"], sweep["cost"] / 1e6, color="tab:blue", marker="o", ms=3)
+    ax1.plot(sweep["buffer"], sweep["cost"] / 1e6,
+             color="tab:blue", marker="o", ms=3)
     ax1.set_xlabel("Safety buffer b (rooms)")
     ax1.set_ylabel("Cost on Choose (EUR millions)", color="tab:blue")
     ax2 = ax1.twinx()
-    ax2.plot(sweep["buffer"], sweep["walk_rate"], color="tab:red", marker="s", ms=3)
+    ax2.plot(sweep["buffer"], sweep["walk_rate"],
+             color="tab:red", marker="s", ms=3)
     ax2.axhline(CEILING, color="black", ls="--", lw=1)
-    ax2.text(sweep["buffer"].max(), CEILING, " ceiling 10/1k", va="bottom", ha="right")
+    ax2.text(sweep["buffer"].max(), CEILING,
+             " ceiling 10/1k", va="bottom", ha="right")
     ax2.set_ylabel("Walks per 1,000 arrivals", color="tab:red")
     ax1.axvline(chosen_b, color="green", ls=":", lw=1.5)
     ax1.set_title(f"{title}: buffer selection on Choose (chosen b={chosen_b})")
@@ -200,16 +213,20 @@ def main():
     raw = data.read_raw()
     raw["arrival_date"] = data.arrival_date(raw)
     clean = features.clean_bookings(raw)
-    train, choose, proof = contract.split_periods(clean)   # chronological, never shuffle
-    print(f"Rows  train={len(train):,}  choose={len(choose):,}  proof={len(proof):,}")
+    train, choose, proof = contract.split_periods(
+        clean)   # chronological, never shuffle
+    print(
+        f"Rows  train={len(train):,}  choose={len(choose):,}  proof={len(proof):,}")
 
     top_cats = learn_top_categories(train)
     X_train = make_X(train, top_cats)
     cols = X_train.columns.tolist()
-    X_choose, X_proof = make_X(choose, top_cats, cols), make_X(proof, top_cats, cols)
+    X_choose, X_proof = make_X(
+        choose, top_cats, cols), make_X(proof, top_cats, cols)
     y_train = train[TARGET]
 
-    lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000, random_state=42))
+    lr = make_pipeline(StandardScaler(), LogisticRegression(
+        max_iter=1000, random_state=42))
     hgb = HistGradientBoostingClassifier(random_state=42)
     lgbm = LGBMClassifier(
         n_estimators=2000,
@@ -234,18 +251,23 @@ def main():
 
     # Baseline 0: sell no extra rooms
     n0 = contract.nightly_table(proof, np.zeros(len(proof)))
-    rows.append(("Zero Oversell", None, 0, score(n0, np.zeros(len(n0), dtype=int))))
+    rows.append(("Zero Oversell", None, 0, score(
+        n0, np.zeros(len(n0), dtype=int))))
 
     for name, ((p_choose, p_proof), _) in methods.items():
         n_choose = contract.nightly_table(choose, p_choose)
         n_proof = contract.nightly_table(proof, p_proof)
 
-        sweeps[name] = sweep_buffers(n_choose)                               # Choose only
+        # Choose only
+        sweeps[name] = sweep_buffers(n_choose)
         b = best_buffer(sweeps[name])
-        choose_costs[name] = float(sweeps[name].loc[sweeps[name]["buffer"] == b, "cost"].iloc[0])
+        choose_costs[name] = float(
+            sweeps[name].loc[sweeps[name]["buffer"] == b, "cost"].iloc[0])
 
-        s = score(n_proof, k_from_buffer(n_proof, b))                        # Proof, once
-        auc = None if name == "Client Flat Rule" else roc_auc_score(proof[TARGET], p_proof)
+        s = score(n_proof, k_from_buffer(n_proof, b)
+                  )                        # Proof, once
+        auc = None if name == "Client Flat Rule" else roc_auc_score(
+            proof[TARGET], p_proof)
         rows.append((name, auc, b, s))
 
     flat_cost = next(r[3]["cost"] for r in rows if r[0] == "Client Flat Rule")
@@ -288,7 +310,8 @@ def main():
         print("\nUncertainty buffer on Choose:")
         for z in (1.0, 1.28, 1.64):
             s = score(cn, k_from_uncertainty(cn, z))
-            print(f"  z={z:<5} cost={s['cost']:>14,.2f}  walks/1k={s['walk_rate']:.2f}  ok={s['ok']}")
+            print(
+                f"  z={z:<5} cost={s['cost']:>14,.2f}  walks/1k={s['walk_rate']:.2f}  ok={s['ok']}")
 
 
 if __name__ == "__main__":
